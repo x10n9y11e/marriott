@@ -45,12 +45,11 @@ jobs:
         run: terraform validate
 
   plan_and_apply:
-    name: ${{ inputs.environment }}
+    name: ${{ inputs.environment || 'test' }}
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-    environment: ${{ inputs.environment }}
+    environment: ${{ inputs.environment || 'test' }}
     env:
-      ENV: ${{ inputs.environment }}
+      ENV: ${{ inputs.environment || 'test' }}
     steps:
       - uses: actions/checkout@v4
 
