@@ -1,0 +1,81 @@
+name: Terraform Deploy
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/**'
+      - 'environments/**'
+      - '.github/workflows/terraform.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - dev
+          - test
+          - perf
+          - staging
+          - prod
+
+env:
+  TF_ROOT: terraform
+  AWS_REGION: ${{ vars.AWS_DEFAULT_REGION || 'us-east-1' }}
+
+jobs:
+  validate:
+    name: Terraform Validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.15'
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_ROOT }}
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_ROOT }}
+        run: terraform validate
+
+  plan_and_apply:
+    name: ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    environment: ${{ inputs.environment }}
+    env:
+      ENV: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.15'
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_ROOT }}
+        run: terraform init
+
+      - name: Select Workspace
+        working-directory: ${{ env.TF_ROOT }}
+        run: |
+          terraform workspace select ${{ env.ENV }} || terraform workspace new ${{ env.ENV }}
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_ROOT }}
+        run: terraform plan -var-file=../environments/${{ env.ENV }}/terraform.tfvars -out=${{ env.ENV }}.tfplan
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_ROOT }}
+        run: terraform apply -auto-approve ${{ env.ENV }}.tfplan
