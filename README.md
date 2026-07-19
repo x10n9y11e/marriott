@@ -1,4 +1,4 @@
-# Marriott Platform
+# Hello-world - Marriott Platform
 
 AWS EKS deployment with Terraform, GitHub Actions, and OPA policies.
 
