@@ -12,6 +12,7 @@ on:
         description: 'Target environment'
         required: true
         type: choice
+        default: test
         options:
           - dev
           - test
