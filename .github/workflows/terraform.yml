@@ -12,6 +12,7 @@ on:
         description: 'Target environment'
         required: true
         type: choice
+        default: test
         options:
           - dev
           - test
@@ -43,13 +44,20 @@ jobs:
         working-directory: ${{ env.TF_ROOT }}
         run: terraform validate
 
+      - name: Setup OPA
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: 0.68.0
+
+      - name: OPA Policy Check
+        run: opa test policies/ -v
+
   plan_and_apply:
-    name: ${{ inputs.environment }}
+    name: ${{ inputs.environment || 'test' }}
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-    environment: ${{ inputs.environment }}
+    environment: ${{ inputs.environment || 'test' }}
     env:
-      ENV: ${{ inputs.environment }}
+      ENV: ${{ inputs.environment || 'test' }}
     steps:
       - uses: actions/checkout@v4
 
