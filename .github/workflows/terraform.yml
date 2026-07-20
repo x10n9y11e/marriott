@@ -44,6 +44,14 @@ jobs:
         working-directory: ${{ env.TF_ROOT }}
         run: terraform validate
 
+      - name: Setup OPA
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: 0.68.0
+
+      - name: OPA Policy Check
+        run: opa test policies/ -v
+
   plan_and_apply:
     name: ${{ inputs.environment || 'test' }}
     runs-on: ubuntu-latest
