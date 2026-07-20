@@ -55,6 +55,7 @@ jobs:
   plan_and_apply:
     name: ${{ inputs.environment || 'test' }}
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
     environment: ${{ inputs.environment || 'test' }}
     env:
       ENV: ${{ inputs.environment || 'test' }}
